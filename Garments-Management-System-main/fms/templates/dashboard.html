@@ -1,105 +1,334 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Employee Dashboard</title>
-</head>
-<body>
-  {% extends 'base.html' %}
-  {% load static %}
-  {% block content %}
-  <div class="row">
-    <div class="col-md-4">
-      <div class="card mb-3">
-        <div class="card-body text-center">
-          <h5>{{ profile.employee.name }}</h5>
-          <p class="mb-1"><strong>Public ID:</strong> {{ profile.public_id }}</p>
-          <p class="mb-1"><strong>Phone:</strong> {{ profile.phone|default:"-" }}</p>
-          <p class="mb-1"><strong>Designation:</strong> {{ profile.designation|default:"-" }}</p>
-        </div>
-      </div>
+{% extends 'base.html' %}
+{% load static %}
 
-      <div class="card">
-        <div class="card-body">
-          <h6>Attendance</h6>
-          <form method="post" class="d-flex gap-2">
-            {% csrf_token %}
-            <button type="submit" name="clock_in" class="btn btn-success w-50">Clock In</button>
-            <button type="submit" name="clock_out" class="btn btn-danger w-50">Clock Out</button>
-          </form>
-          <hr>
-          <a href="{% url 'attendance_history' %}">View full attendance history</a>
+{% block content %}
+
+<div class="container mt-4">
+
+    <div class="row">
+
+        <!-- ========================= -->
+        <!-- EMPLOYEE PROFILE -->
+        <!-- ========================= -->
+
+        <div class="col-md-4">
+
+            <div class="card mb-3">
+
+                <div class="card-body text-center">
+
+                    <h5>{{ profile.employee.name }}</h5>
+
+                    <p class="mb-1">
+                        <strong>Public ID:</strong>
+                        {{ profile.public_id }}
+                    </p>
+
+                    <p class="mb-1">
+                        <strong>Phone:</strong>
+                        {{ profile.phone|default:"-" }}
+                    </p>
+
+                    <p class="mb-1">
+                        <strong>Designation:</strong>
+                        {{ profile.designation|default:"-" }}
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- ========================= -->
+            <!-- FACE ATTENDANCE -->
+            <!-- ========================= -->
+
+            <div class="card">
+
+                <div class="card-body text-center">
+
+                    <h6>Face Recognition Attendance</h6>
+
+                    <p class="text-muted">
+                        Use face recognition to mark your attendance.
+                    </p>
+
+                    <a href="{% url 'attendance_home' %}"
+                       class="btn btn-primary w-100">
+
+                        <i class="fas fa-camera"></i>
+                        Open Face Attendance
+
+                    </a>
+
+                    <hr>
+
+                    <a href="{% url 'attendance_history' %}">
+                        View Full Attendance History
+                    </a>
+
+                </div>
+
+            </div>
+
         </div>
-      </div>
+
+
+        <!-- ========================= -->
+        <!-- TODAY'S WORK -->
+        <!-- ========================= -->
+
+        <div class="col-md-8">
+
+            <div class="card mb-3">
+
+                <div class="card-body">
+
+                    <h5>
+                        Today's Work ({{ today }})
+                    </h5>
+
+                    <form method="post">
+
+                        {% csrf_token %}
+
+                        {{ pform.non_field_errors }}
+
+
+                        <div class="mb-3">
+
+                            <label class="form-label">
+                                Products completed today
+                            </label>
+
+                            {{ pform.product_count }}
+
+                        </div>
+
+
+                        <div class="mb-3">
+
+                            <label class="form-label">
+                                Notes (optional)
+                            </label>
+
+                            {{ pform.notes }}
+
+                        </div>
+
+
+                        <!-- ========================= -->
+                        <!-- PRODUCTION HISTORY -->
+                        <!-- ========================= -->
+
+                        <table class="table table-bordered">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>Date</th>
+                                    <th>Quantity</th>
+
+                                </tr>
+
+                            </thead>
+
+
+                            <tbody>
+
+                                {% for prod in productions %}
+
+                                <tr>
+
+                                    <td>
+                                        {{ prod.date|date:"M d, Y" }}
+                                    </td>
+
+                                    <td>
+                                        {{ prod.quantity }}
+                                    </td>
+
+                                </tr>
+
+                                {% empty %}
+
+                                <tr>
+
+                                    <td colspan="2">
+                                        No production records yet.
+                                    </td>
+
+                                </tr>
+
+                                {% endfor %}
+
+
+                                <tr>
+
+                                    <td>
+                                        <strong>Total</strong>
+                                    </td>
+
+                                    <td>
+                                        <strong>
+                                            {{ total_production }}
+                                        </strong>
+                                    </td>
+
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+
+                        <button
+                            type="submit"
+                            name="product_submit"
+                            class="btn btn-primary">
+
+                            Save
+
+                        </button>
+
+                    </form>
+
+
+                    <hr>
+
+
+                    <p>
+                        <strong>
+                            Current saved product count:
+                        </strong>
+
+                        {{ product_count }}
+
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- ========================= -->
+            <!-- RECENT ATTENDANCE -->
+            <!-- ========================= -->
+
+            <div class="card">
+
+                <div class="card-body">
+
+                    <h6>Recent Attendance</h6>
+
+
+                    <div class="table-responsive">
+
+                        <table class="table table-bordered">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>Date</th>
+                                    <th>Clock In</th>
+                                    <th>Clock Out</th>
+                                    <th>Total Working Time</th>
+
+                                </tr>
+
+                            </thead>
+
+
+                            <tbody>
+
+                                {% for a in last_attendances %}
+
+                                <tr>
+
+                                    <td>
+                                        {{ a.date|date:"d M Y" }}
+                                    </td>
+
+
+                                    <td>
+
+                                        {% if a.clock_in %}
+
+                                            {{ a.clock_in|date:"h:i:s A" }}
+
+                                        {% else %}
+
+                                            -
+
+                                        {% endif %}
+
+                                    </td>
+
+
+                                    <td>
+
+                                        {% if a.clock_out %}
+
+                                            {{ a.clock_out|date:"h:i:s A" }}
+
+                                        {% else %}
+
+                                            <span class="text-primary">
+                                                Still Working
+                                            </span>
+
+                                        {% endif %}
+
+                                    </td>
+
+
+                                    <td>
+
+                                        {% if a.total_working_time %}
+
+                                            {{ a.total_working_time }}
+
+                                        {% else %}
+
+                                            <span class="text-primary">
+                                                Working...
+                                            </span>
+
+                                        {% endif %}
+
+                                    </td>
+
+                                </tr>
+
+
+                                {% empty %}
+
+                                <tr>
+
+                                    <td colspan="4">
+                                        No attendance records yet.
+                                    </td>
+
+                                </tr>
+
+                                {% endfor %}
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
     </div>
 
-    <div class="col-md-8">
-      <div class="card mb-3">
-        <div class="card-body">
-          <h5>Today's Work ({{ today }})</h5>
-          <form method="post">
-            {% csrf_token %}
-            {{ pform.non_field_errors }}
-            <div class="mb-3">
-              <label>Products completed today</label>
-              {{ pform.product_count }}
-            </div>
-            <div class="mb-3">
-              <label>Notes (optional)</label>
-              {{ pform.notes }}
-            </div>
-            <table class="table table-bordered">
-          <thead>
-              <tr>
-                  <th>Date</th>
-                  <th>Quantity</th>
-              </tr>
-          </thead>
-          <tbody>
-              {% for prod in productions %}
-              <tr>
-                  <td>{{ prod.date|date:"M d, Y" }}</td>
-                  <td>{{ prod.quantity }}</td>
-              </tr>
-              {% empty %}
-              <tr>
-                  <td colspan="2">No production records yet.</td>
-              </tr>
-              {% endfor %}
-              <tr>
-                  <td><strong>Total</strong></td>
-                  <td><strong>{{ total_production }}</strong></td>
-              </tr>
-          </tbody>
+</div>
 
-      </table>
-
-            <button type="submit" name="product_submit" class="btn btn-primary">Save</button>
-          </form>
-          <hr>
-          <p><strong>Current saved product count:</strong> {{ product_count }}</p>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-body">
-          <h6>Recent Attendance</h6>
-          <ul class="list-group">
-            {% for a in last_attendances %}
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                {{ a.get_status_display }} <span class="text-muted small">{{ a.timestamp|date:"Y-m-d H:i" }}</span>
-              </li>
-            {% empty %}
-              <li class="list-group-item">No attendance records yet.</li>
-            {% endfor %}
-          </ul>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <hr>
-  {% endblock %}
-</body>
-</html>
+{% endblock %}

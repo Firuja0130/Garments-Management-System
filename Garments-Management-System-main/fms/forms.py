@@ -26,7 +26,7 @@ class ProductCountForm(forms.ModelForm):
 class AttendanceEditForm(forms.ModelForm):
     class Meta:
         model = Attendance
-        fields = ['employee', 'status']
+        fields = ['employee']
 
 class BonusForm(forms.Form):
     percentage = forms.FloatField(

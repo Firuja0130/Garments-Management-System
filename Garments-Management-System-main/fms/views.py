@@ -1,7 +1,8 @@
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth import login as auth_login, logout as auth_logout, authenticate
-from django.views.decorators.csrf import csrf_exempt 
+from django.contrib.auth import login as auth_login, logout as auth_logout
+from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
 from django.contrib.auth.models import User
 from .models import Employee, Supplier, Product, Attendance
@@ -9,7 +10,7 @@ from .models import EmployeeProfile, DailyWork, Production
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from .forms import ProductionForm, BonusForm, ProductCountForm, AttendanceEditForm
-from django.db.models import Sum 
+from django.db.models import Sum
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
 from datetime import date
@@ -17,163 +18,430 @@ import base64
 import uuid
 from django.core.files.base import ContentFile
 from attendance.models import RegisteredFace
- 
-# --------------------------
-# Generic CRUD helper
-# --------------------------
+
+
+# ============================================================
+# GENERIC CRUD HELPER
+# ============================================================
+
 @login_required(login_url='admin_login')
 def list_items(request, model, template, context_name):
-    if request.user.is_authenticated and request.user.is_staff: 
+
+    if request.user.is_authenticated and request.user.is_staff:
         items = model.objects.all()
-    return render(request, template, {context_name: items})
+    else:
+        items = model.objects.none()
+
+    return render(
+        request,
+        template,
+        {context_name: items}
+    )
+
 
 @login_required(login_url='admin_login')
 def add_item(request, model, fields, template, redirect_url):
-    if request.user.is_authenticated and request.user.is_staff: 
+
+    if request.user.is_authenticated and request.user.is_staff:
+
         if request.method == "POST":
-            data = {field: request.POST[field] for field in fields}
+
+            data = {
+                field: request.POST[field]
+                for field in fields
+            }
+
             model.objects.create(**data)
-            return redirect('admin_redirect')  
+
+            return redirect('admin_redirect')
+
     return render(request, template)
+
 
 @login_required(login_url='admin_login')
 def edit_item(request, model, sl, fields, template, redirect_url):
-    if request.user.is_authenticated and request.user.is_staff: 
-        item = get_object_or_404(model, sl=sl)
+
+    if request.user.is_authenticated and request.user.is_staff:
+
+        item = get_object_or_404(
+            model,
+            sl=sl
+        )
+
         if request.method == "POST":
+
             for field in fields:
-                setattr(item, field, request.POST[field])
+
+                setattr(
+                    item,
+                    field,
+                    request.POST[field]
+                )
+
             item.save()
-            return redirect('admin_redirect')  
-    return render(request, template, {model.__name__.lower(): item})
+
+            return redirect('admin_redirect')
+
+        return render(
+            request,
+            template,
+            {
+                model.__name__.lower(): item
+            }
+        )
+
+    return redirect('admin_login')
+
 
 @login_required(login_url='admin_login')
 def delete_item(request, model, sl, redirect_url):
-    if request.user.is_authenticated and request.user.is_staff: 
-        item = get_object_or_404(model, sl=sl)
+
+    if request.user.is_authenticated and request.user.is_staff:
+
+        item = get_object_or_404(
+            model,
+            sl=sl
+        )
+
         item.delete()
-    return redirect('admin_redirect')  
-# --------------------------
-# Employee CRUD
-# --------------------------
+
+    return redirect('admin_redirect')
+
+
+# ============================================================
+# EMPLOYEE CRUD
+# ============================================================
+
 def employee_list(request):
-    return list_items(request, Employee, 'employee_list.html', 'employees')
+    return list_items(
+        request,
+        Employee,
+        'employee_list.html',
+        'employees'
+    )
+
 
 def employee_add(request):
-    return add_item(request, Employee, ['name','position','phone','email','salary'], 'employee_add.html', 'employee_list')
+    return add_item(
+        request,
+        Employee,
+        [
+            'name',
+            'position',
+            'phone',
+            'email',
+            'salary'
+        ],
+        'employee_add.html',
+        'employee_list'
+    )
+
 
 def employee_edit(request, sl):
-    return edit_item(request, Employee, sl, ['name','position','phone','email','salary','password'], 'employee_edit.html', 'employee_list')
+
+    return edit_item(
+        request,
+        Employee,
+        sl,
+        [
+            'name',
+            'position',
+            'phone',
+            'email',
+            'salary',
+            'password'
+        ],
+        'employee_edit.html',
+        'employee_list'
+    )
+
 
 def employee_delete(request, sl):
-    return delete_item(request, Employee, sl, 'employee_list')
 
-# --------------------------
-# Supplier CRUD
-# --------------------------
+    return delete_item(
+        request,
+        Employee,
+        sl,
+        'employee_list'
+    )
+
+
+# ============================================================
+# SUPPLIER CRUD
+# ============================================================
+
 def supplier_list(request):
-    return list_items(request, Supplier, 'employee_list.html', 'suppliers')
+
+    return list_items(
+        request,
+        Supplier,
+        'employee_list.html',
+        'suppliers'
+    )
+
 
 def supplier_add(request):
-    return add_item(request, Supplier, ['name','email','phone','Raw_Material'], 'supplier_add.html', 'supplier_list')
+
+    return add_item(
+        request,
+        Supplier,
+        [
+            'name',
+            'email',
+            'phone',
+            'Raw_Material'
+        ],
+        'supplier_add.html',
+        'supplier_list'
+    )
+
 
 def supplier_edit(request, sl):
-    return edit_item(request, Supplier, sl, ['name','email','phone','Raw_Material','address'], 'supplier_edit.html', 'supplier_list')
+
+    return edit_item(
+        request,
+        Supplier,
+        sl,
+        [
+            'name',
+            'email',
+            'phone',
+            'Raw_Material',
+            'address'
+        ],
+        'supplier_edit.html',
+        'supplier_list'
+    )
+
 
 def supplier_delete(request, sl):
-    return delete_item(request, Supplier, sl, 'supplier_list')
 
-# --------------------------
-# Product CRUD
-# --------------------------
+    return delete_item(
+        request,
+        Supplier,
+        sl,
+        'supplier_list'
+    )
+
+
+# ============================================================
+# PRODUCT CRUD
+# ============================================================
+
 def product_list(request):
-    return list_items(request, Product, 'product_list.html', 'products')
+
+    return list_items(
+        request,
+        Product,
+        'product_list.html',
+        'products'
+    )
+
 
 def product_add(request):
-    return add_item(request, Product, ['name','price'], 'product_add.html', 'product_list')
+
+    return add_item(
+        request,
+        Product,
+        [
+            'name',
+            'price'
+        ],
+        'product_add.html',
+        'product_list'
+    )
+
 
 def product_edit(request, sl):
-    return edit_item(request, Product, sl, ['name','price'], 'product_edit.html', 'product_list')
+
+    return edit_item(
+        request,
+        Product,
+        sl,
+        [
+            'name',
+            'price'
+        ],
+        'product_edit.html',
+        'product_list'
+    )
+
 
 def product_delete(request, sl):
-    return delete_item(request, Product, sl, 'product_list')
 
-# --------------------------
-# Authentication & Signup
-# --------------------------
+    return delete_item(
+        request,
+        Product,
+        sl,
+        'product_list'
+    )
+
+
+# ============================================================
+# AUTHENTICATION & REGISTRATION
+# ============================================================
+
 def index(request):
-    return render(request, 'index.html')
+
+    return render(
+        request,
+        'index.html'
+    )
+
 
 def about(request):
-    return render(request, 'about.html')
+
+    return render(
+        request,
+        'about.html'
+    )
+
 
 def employee_register_page(request):
-    return render(request, "employee-register.html")
+
+    return render(
+        request,
+        "employee-register.html"
+    )
+
 
 def supplier_register_page(request):
-    return render(request, "supplier-register.html")
+
+    return render(
+        request,
+        "supplier-register.html"
+    )
+
 
 def login_page(request):
+
     if request.method == "POST":
+
         email = request.POST.get("email")
         password = request.POST.get("password")
 
         try:
-            emp = Employee.objects.get(email=email, password=password)
+
+            emp = Employee.objects.get(
+                email=email,
+                password=password
+            )
+
             user, created = User.objects.get_or_create(
                 username=email,
-                defaults={'email': email}
+                defaults={
+                    'email': email
+                }
             )
-            auth_login(request, user)
+
+            auth_login(
+                request,
+                user
+            )
+
             request.session['employee_id'] = emp.sl
-            profile = get_object_or_404(EmployeeProfile, user__email=email)
+
+            get_object_or_404(
+                EmployeeProfile,
+                user__email=email
+            )
+
             return redirect('dashboard')
+
         except Employee.DoesNotExist:
+
             pass
 
-        supplier = Supplier.objects.filter(email=email, password=password).first()
+        supplier = Supplier.objects.filter(
+            email=email,
+            password=password
+        ).first()
+
         if supplier:
+
             request.session['supplier_id'] = supplier.sl
-            return redirect('supplier_dashboard')
 
-        messages.error(request, "Invalid email or password")
+            return redirect(
+                'supplier_dashboard'
+            )
 
-    return render(request, "login.html")
+        messages.error(
+            request,
+            "Invalid email or password"
+        )
 
-# --------------------------
-# Supplier login page
-# --------------------------
+    return render(
+        request,
+        "login.html"
+    )
+
+
+# ============================================================
+# SUPPLIER LOGIN
+# ============================================================
+
 def supplier_login(request):
+
     if request.method == 'POST':
+
         email = request.POST.get('email')
         password = request.POST.get('password')
 
-        supplier = Supplier.objects.filter(email=email, password=password).first()
-        if supplier:
-            request.session['supplier_id'] = supplier.sl
-            return redirect('supplier_dashboard')
-        else:
-            messages.error(request, "Invalid email or password")
+        supplier = Supplier.objects.filter(
+            email=email,
+            password=password
+        ).first()
 
-    return render(request, 'supplier_login.html')
+        if supplier:
+
+            request.session['supplier_id'] = supplier.sl
+
+            return redirect(
+                'supplier_dashboard'
+            )
+
+        else:
+
+            messages.error(
+                request,
+                "Invalid email or password"
+            )
+
+    return render(
+        request,
+        'supplier_login.html'
+    )
+
+
+# ============================================================
+# EMPLOYEE REGISTRATION
+# ============================================================
 
 @csrf_exempt
 def employee_register(request):
+
     if request.method == "POST":
+
         name = request.POST.get("name")
         email = request.POST.get("email")
         password = request.POST.get("password")
         phone = request.POST.get("phone")
         face_image = request.POST.get("face_image")
 
-        # Create Django user
+        # ---------------------------------------------
+        # CREATE DJANGO USER
+        # ---------------------------------------------
+
         user = User.objects.create_user(
             username=email,
             email=email,
             password=password
         )
 
-        # Create employee
+        # ---------------------------------------------
+        # CREATE EMPLOYEE
+        # ---------------------------------------------
+
         emp = Employee.objects.create(
             name=name,
             email=email,
@@ -181,7 +449,10 @@ def employee_register(request):
             phone=phone
         )
 
-        # Create employee profile
+        # ---------------------------------------------
+        # CREATE EMPLOYEE PROFILE
+        # ---------------------------------------------
+
         profile = EmployeeProfile.objects.create(
             user=user,
             phone=phone,
@@ -189,13 +460,26 @@ def employee_register(request):
             employee=emp
         )
 
-        # Save registered face
-        if face_image:
-            try:
-                format, image_data = face_image.split(';base64,')
-                image_data = base64.b64decode(image_data)
+        # ---------------------------------------------
+        # SAVE REGISTERED FACE
+        # ---------------------------------------------
 
-                file_name = f"{email.replace('@', '_').replace('.', '_')}_{uuid.uuid4().hex[:6]}.jpg"
+        if face_image:
+
+            try:
+
+                format, image_data = face_image.split(
+                    ';base64,'
+                )
+
+                image_data = base64.b64decode(
+                    image_data
+                )
+
+                file_name = (
+                    f"{email.replace('@', '_').replace('.', '_')}_"
+                    f"{uuid.uuid4().hex[:6]}.jpg"
+                )
 
                 RegisteredFace.objects.create(
                     employee=profile,
@@ -206,19 +490,35 @@ def employee_register(request):
                 )
 
             except Exception as e:
-                print("Face saving error:", e)
 
-        return redirect('login_page')
+                print(
+                    "Face saving error:",
+                    e
+                )
 
-    return redirect('employee_register_page')
+        return redirect(
+            'login_page'
+        )
+
+    return redirect(
+        'employee_register_page'
+    )
+
+
+# ============================================================
+# SUPPLIER REGISTRATION
+# ============================================================
+
 @csrf_exempt
 def supplier_register(request):
+
     if request.method == "POST":
+
         name = request.POST.get("name")
         email = request.POST.get("email")
         password = request.POST.get("password")
-        phone = request.POST.get("phone")   
-        address = request.POST.get("address")   
+        phone = request.POST.get("phone")
+        address = request.POST.get("address")
 
         Supplier.objects.create(
             name=name,
@@ -227,261 +527,707 @@ def supplier_register(request):
             phone=phone,
             address=address
         )
-        return redirect('login_page')  
-    return redirect('supplier_register_page')  
 
-# --------------------------
-# Admin
-# --------------------------
+        return redirect(
+            'login_page'
+        )
+
+    return redirect(
+        'supplier_register_page'
+    )
+
+
+# ============================================================
+# ADMIN
+# ============================================================
+
 def custom_admin_login(request):
+
     if request.method == "POST":
-        form = AuthenticationForm(request, data=request.POST)
+
+        form = AuthenticationForm(
+            request,
+            data=request.POST
+        )
+
         if form.is_valid():
+
             user = form.get_user()
-            if user.is_staff:  
-                login(request, user)
-                return redirect('employee_list')  
+
+            if user.is_staff:
+
+                login(
+                    request,
+                    user
+                )
+
+                return redirect(
+                    'employee_list'
+                )
+
             else:
-                return redirect('login') 
+
+                return redirect(
+                    'login'
+                )
+
     else:
+
         form = AuthenticationForm()
 
-    return render(request, 'admin_login.html', {'form': form})
+    return render(
+        request,
+        'admin_login.html',
+        {
+            'form': form
+        }
+    )
+
 
 @login_required(login_url='admin_login')
 def admin_redirect(request):
-    if request.user.is_authenticated and request.user.is_staff: 
-        employees = Employee.objects.annotate(total_production=Sum('production__quantity'))
-        return render(request, 'employee_list.html', {
-            'employees': employees,
-            'suppliers': Supplier.objects.all(),
-            'products': Product.objects.all()
-        })
-    return redirect('admin_login')
+
+    if request.user.is_authenticated and request.user.is_staff:
+
+        employees = Employee.objects.annotate(
+            total_production=Sum(
+                'production__quantity'
+            )
+        )
+
+        return render(
+            request,
+            'employee_list.html',
+            {
+                'employees': employees,
+                'suppliers': Supplier.objects.all(),
+                'products': Product.objects.all()
+            }
+        )
+
+    return redirect(
+        'admin_login'
+    )
+
 
 def admin_logout(request):
-    logout(request)  
-    return redirect('admin_login')  
+
+    logout(request)
+
+    return redirect(
+        'admin_login'
+    )
+
+
+# ============================================================
+# ADMIN ATTENDANCE
+# ============================================================
 
 @login_required(login_url='admin_login')
 def take_attendance(request):
-    if request.user.is_authenticated and request.user.is_staff: 
-        employees = EmployeeProfile.objects.all()
-        if request.method == 'POST':
-            today = timezone.now().date()
-            for emp in employees:
-                present = request.POST.get(f'attend_{emp.id}') == 'on'
-                Attendance.objects.create(
-                    employee=emp,
-                    date=today,
-                    status='IN' if present else 'OUT',
-                    marked_by_admin=True
-                )
-            return redirect('attendance_list')
-    return render(request, 'take_attendance.html', {'employees': employees})
+
+    if not (
+        request.user.is_authenticated
+        and request.user.is_staff
+    ):
+        return redirect('admin_login')
+
+    employees = EmployeeProfile.objects.all()
+
+    if request.method == 'POST':
+
+        today = timezone.localdate()
+        current_time = timezone.now()
+
+        for emp in employees:
+
+            present = (
+                request.POST.get(
+                    f'attend_{emp.id}'
+                ) == 'on'
+            )
+
+            attendance, created = Attendance.objects.get_or_create(
+                employee=emp,
+                date=today
+            )
+
+            if present:
+
+                if not attendance.clock_in:
+
+                    attendance.clock_in = current_time
+
+            else:
+
+                if not attendance.clock_in:
+                    attendance.clock_in = None
+
+            attendance.marked_by_admin = True
+
+            attendance.save()
+
+        return redirect(
+            'attendance_list'
+        )
+
+    return render(
+        request,
+        'take_attendance.html',
+        {
+            'employees': employees
+        }
+    )
+
 
 @login_required(login_url='admin_login')
 def attendance_list(request):
-    if request.user.is_authenticated and request.user.is_staff: 
-        attendances = Attendance.objects.select_related('employee').order_by('-timestamp')
-        return render(request, 'attendance_list.html', {'attendances': attendances})
+
+    if not (
+        request.user.is_authenticated
+        and request.user.is_staff
+    ):
+        return redirect('admin_login')
+
+    attendances = Attendance.objects.select_related(
+        'employee',
+        'employee__employee'
+    ).order_by(
+        '-date',
+        '-clock_in'
+    )
+
+    return render(
+        request,
+        'attendance_list.html',
+        {
+            'attendances': attendances
+        }
+    )
+
 
 @login_required(login_url='admin_login')
 def attendance_edit(request, pk):
-    if request.user.is_authenticated and request.user.is_staff: 
-        attendance = get_object_or_404(Attendance, pk=pk)
 
-        if request.method == 'POST':
-            form = AttendanceEditForm(request.POST, instance=attendance)
-            if form.is_valid():
-                form.save()
-                return redirect('attendance_list')
-        else:
-            form = AttendanceEditForm(instance=attendance)
+    if not (
+        request.user.is_authenticated
+        and request.user.is_staff
+    ):
+        return redirect('admin_login')
 
-    return render(request, 'attendance_edit.html', {'form': form, 'attendance': attendance})
+    attendance = get_object_or_404(
+        Attendance,
+        pk=pk
+    )
+
+    if request.method == 'POST':
+
+        form = AttendanceEditForm(
+            request.POST,
+            instance=attendance
+        )
+
+        if form.is_valid():
+
+            form.save()
+
+            return redirect(
+                'attendance_list'
+            )
+
+    else:
+
+        form = AttendanceEditForm(
+            instance=attendance
+        )
+
+    return render(
+        request,
+        'attendance_edit.html',
+        {
+            'form': form,
+            'attendance': attendance
+        }
+    )
+
+
+# ============================================================
+# EMPLOYEE BONUS
+# ============================================================
 
 @login_required(login_url='admin_login')
 def employee_bonus(request):
-    if request.user.is_authenticated and request.user.is_staff: 
-        employees = Employee.objects.all()
-        if request.method == "POST":
-            emp_id = request.POST.get("employee")
-            bonus = request.POST.get("bonus")
-            try:
-                emp = Employee.objects.get(sl=emp_id)
-                emp.salary = emp.salary + (emp.salary * int(bonus) / 100)
-                emp.save()
-            except Employee.DoesNotExist:
-                pass
-            return redirect('employee_list')  
 
-    return render(request, 'employee_bonus.html', {"employees": employees})
+    if not (
+        request.user.is_authenticated
+        and request.user.is_staff
+    ):
+        return redirect('admin_login')
 
-# --------------------------
-# Employee production
-# --------------------------
+    employees = Employee.objects.all()
+
+    if request.method == "POST":
+
+        emp_id = request.POST.get(
+            "employee"
+        )
+
+        bonus = request.POST.get(
+            "bonus"
+        )
+
+        try:
+
+            emp = Employee.objects.get(
+                sl=emp_id
+            )
+
+            emp.salary = (
+                emp.salary
+                + (
+                    emp.salary
+                    * int(bonus)
+                    / 100
+                )
+            )
+
+            emp.save()
+
+        except Employee.DoesNotExist:
+
+            pass
+
+        return redirect(
+            'employee_list'
+        )
+
+    return render(
+        request,
+        'employee_bonus.html',
+        {
+            "employees": employees
+        }
+    )
+
+
+# ============================================================
+# EMPLOYEE PRODUCTION
+# ============================================================
+
 def employee_dashboard(request):
-    emp_id = request.session.get('employee_id')
+
+    emp_id = request.session.get(
+        'employee_id'
+    )
+
     if not emp_id:
-        return redirect('login_page')
-    
-    employee = Employee.objects.get(sl=emp_id)
+
+        return redirect(
+            'login_page'
+        )
+
+    employee = Employee.objects.get(
+        sl=emp_id
+    )
 
     if request.method == 'POST':
-        form = ProductionForm(request.POST)
+
+        form = ProductionForm(
+            request.POST
+        )
+
         if form.is_valid():
-            production = form.save(commit=False)
+
+            production = form.save(
+                commit=False
+            )
+
             production.employee = employee
+
             production.save()
-            return redirect('employee_dashboard')  
+
+            return redirect(
+                'employee_dashboard'
+            )
 
     form = ProductionForm()
-    productions = Production.objects.filter(employee=employee).order_by('-date')
-    total_production = productions.aggregate(total=Sum('quantity'))['total'] or 0
 
-    print(f"Productions for {employee.name}: {productions}")  
+    productions = Production.objects.filter(
+        employee=employee
+    ).order_by(
+        '-date'
+    )
 
-    return render(request, 'employee.html', {
-        'form': form,
-        'productions': productions,
-        'total_production': total_production
-    })
+    total_production = productions.aggregate(
+        total=Sum('quantity')
+    )['total'] or 0
 
-# --------------------------
-# Employee dashboard
-# --------------------------
+    print(
+        f"Productions for {employee.name}: "
+        f"{productions}"
+    )
+
+    return render(
+        request,
+        'employee.html',
+        {
+            'form': form,
+            'productions': productions,
+            'total_production': total_production
+        }
+    )
+
+
+# ============================================================
+# HOME
+# ============================================================
+
 def home(request):
+
     if request.user.is_authenticated:
-        return redirect('dashboard')
-    return redirect('index')
+
+        return redirect(
+            'dashboard'
+        )
+
+    return redirect(
+        'index'
+    )
+
 
 def dashboard_view(request):
-        return render(request, 'dashboard.html') 
+
+    return render(
+        request,
+        'dashboard.html'
+    )
+
 
 def logout_view(request):
-    logout(request)   
-    return redirect('login_page') 
+
+    logout(request)
+
+    return redirect(
+        'login_page'
+    )
+
+
+# ============================================================
+# EMPLOYEE DASHBOARD
+# ============================================================
 
 @login_required
 def dashboard(request):
-    profile, _ = EmployeeProfile.objects.get_or_create(user=request.user)
-    today = date.today()
-    
-    dailywork, _ = DailyWork.objects.get_or_create(employee=profile, date=today)
+
+    profile, _ = EmployeeProfile.objects.get_or_create(
+        user=request.user
+    )
+
+    today = timezone.localdate()
+
+    # ---------------------------------------------
+    # DAILY WORK
+    # ---------------------------------------------
+
+    dailywork, _ = DailyWork.objects.get_or_create(
+        employee=profile,
+        date=today
+    )
+
+    # ---------------------------------------------
+    # PRODUCT COUNT
+    # ---------------------------------------------
 
     if request.method == 'POST':
+
         if 'product_submit' in request.POST:
-            pform = ProductCountForm(request.POST, instance=dailywork)
+
+            pform = ProductCountForm(
+                request.POST,
+                instance=dailywork
+            )
+
             if pform.is_valid():
+
                 pform.instance.employee = profile
                 pform.instance.date = today
+
                 pform.save()
 
                 production, created = Production.objects.get_or_create(
-                    employee_profile=profile, 
+                    employee_profile=profile,
                     date=today,
-                    defaults={'employee': profile.employee,'quantity': dailywork.product_count}
+                    defaults={
+                        'employee': profile.employee,
+                        'quantity': dailywork.product_count
+                    }
                 )
+
                 if not created:
-                    production.quantity = dailywork.product_count
+
+                    production.quantity = (
+                        dailywork.product_count
+                    )
+
                     production.save()
 
-                messages.success(request, 'Daily product count and production history updated.')
-                return redirect('dashboard')
+                messages.success(
+                    request,
+                    'Daily product count updated successfully.'
+                )
 
-        elif 'clock_in' in request.POST or 'clock_out' in request.POST:
-            status = 'IN' if 'clock_in' in request.POST else 'OUT'
-            Attendance.objects.create(employee=profile, status=status, marked_by_admin=False)
-            messages.success(request, f'Attendance { "clocked in" if status=="IN" else "clocked out" }.')
-            return redirect('dashboard')
+                return redirect(
+                    'dashboard'
+                )
+
     else:
-        pform = ProductCountForm(instance=dailywork)
 
-    productions = Production.objects.filter(employee_profile=profile).order_by('-date')
-    total_production = productions.aggregate(total=Sum('quantity'))['total'] or 0
+        pform = ProductCountForm(
+            instance=dailywork
+        )
 
-    last_attendances = profile.attendances.order_by('-timestamp')[:8]
+    # ---------------------------------------------
+    # PRODUCTION HISTORY
+    # ---------------------------------------------
+
+    productions = Production.objects.filter(
+        employee_profile=profile
+    ).order_by(
+        '-date'
+    )
+
+    total_production = productions.aggregate(
+        total=Sum('quantity')
+    )['total'] or 0
+
+    # ---------------------------------------------
+    # ATTENDANCE HISTORY
+    # ---------------------------------------------
+
+    last_attendances = profile.attendances.order_by(
+        '-date',
+        '-clock_in'
+    )[:8]
+
+    # ---------------------------------------------
+    # TODAY'S ATTENDANCE
+    # ---------------------------------------------
+
+    today_attendance = Attendance.objects.filter(
+        employee=profile,
+        date=today
+    ).first()
+
+    # ---------------------------------------------
+    # CONTEXT
+    # ---------------------------------------------
 
     context = {
         'profile': profile,
         'pform': pform,
         'product_count': dailywork.product_count,
         'last_attendances': last_attendances,
+        'today_attendance': today_attendance,
         'today': today,
         'productions': productions,
         'total_production': total_production,
     }
-    return render(request, 'dashboard.html', context)
+
+    return render(
+        request,
+        'dashboard.html',
+        context
+    )
+
+
+# ============================================================
+# EMPLOYEE PROFILE
+# ============================================================
 
 @login_required
 def profile_view(request):
-    profile, _ = EmployeeProfile.objects.get_or_create(user=request.user)
-    return render(request, 'profile.html', {'profile': profile})
+
+    profile, _ = EmployeeProfile.objects.get_or_create(
+        user=request.user
+    )
+
+    return render(
+        request,
+        'profile.html',
+        {
+            'profile': profile
+        }
+    )
+
+
+# ============================================================
+# ATTENDANCE HISTORY
+# ============================================================
 
 @login_required
 def attendance_history(request):
-    profile = get_object_or_404(EmployeeProfile, user=request.user)
-    attendances = profile.attendances.order_by('-timestamp')
-    return render(request, 'attendance_history.html', {'attendances': attendances})
 
-# --------------------------
-# Supplier dashboard
-# --------------------------
+    profile = get_object_or_404(
+        EmployeeProfile,
+        user=request.user
+    )
+
+    attendances = profile.attendances.order_by(
+        '-date',
+        '-clock_in'
+    )
+
+    return render(
+        request,
+        'attendance_history.html',
+        {
+            'attendances': attendances
+        }
+    )
+
+
+# ============================================================
+# SUPPLIER DASHBOARD
+# ============================================================
+
 def supplier_dashboard(request):
-    sup_id = request.session.get('supplier_id')
-    if not sup_id:
-        return redirect('supplier_login')
 
-    supplier = get_object_or_404(Supplier, sl=sup_id)
+    sup_id = request.session.get(
+        'supplier_id'
+    )
+
+    if not sup_id:
+
+        return redirect(
+            'supplier_login'
+        )
+
+    supplier = get_object_or_404(
+        Supplier,
+        sl=sup_id
+    )
 
     if request.method == 'POST':
-        raw_material = request.POST.get('Raw_Material')
-        quantity_raw = request.POST.get('Quantity')
-        price_raw = request.POST.get('Price')
 
-        # Convert to correct data types with fallback to existing values
+        raw_material = request.POST.get(
+            'Raw_Material'
+        )
+
+        quantity_raw = request.POST.get(
+            'Quantity'
+        )
+
+        price_raw = request.POST.get(
+            'Price'
+        )
+
+        # -----------------------------------------
+        # QUANTITY
+        # -----------------------------------------
+
         try:
-            quantity = int(quantity_raw)
-        except (ValueError, TypeError):
+
+            quantity = int(
+                quantity_raw
+            )
+
+        except (
+            ValueError,
+            TypeError
+        ):
+
             quantity = supplier.Quantity
 
+        # -----------------------------------------
+        # PRICE
+        # -----------------------------------------
+
         try:
-            price = int(price_raw)
-        except (ValueError, TypeError):
+
+            price = int(
+                price_raw
+            )
+
+        except (
+            ValueError,
+            TypeError
+        ):
+
             price = supplier.Price
 
-        # Track if updated
+        # -----------------------------------------
+        # TRACK CHANGES
+        # -----------------------------------------
+
         updated = False
 
-        # Check Raw_Material update
-        if raw_material and supplier.Raw_Material != raw_material:
+        # Raw Material
+
+        if (
+            raw_material
+            and supplier.Raw_Material != raw_material
+        ):
+
             supplier.Raw_Material = raw_material
+
             updated = True
 
-        # Check Quantity update
+        # Quantity
+
         if supplier.Quantity != quantity:
+
             supplier.Quantity = quantity
+
             updated = True
 
-        # Check Price update
+        # Price
+
         if supplier.Price != price:
+
             supplier.Price = price
+
             updated = True
+
+        # -----------------------------------------
+        # SAVE
+        # -----------------------------------------
 
         if updated:
+
             supplier.save()
-            messages.success(request, "Supplier details updated successfully.")
+
+            messages.success(
+                request,
+                "Supplier details updated successfully."
+            )
+
         else:
-            messages.info(request, "No changes detected.")
+
+            messages.info(
+                request,
+                "No changes detected."
+            )
 
     context = {
         'supplier': supplier,
     }
-    return render(request, 'supplier_dashboard.html', context)
+
+    return render(
+        request,
+        'supplier_dashboard.html',
+        context
+    )
 
 
+# ============================================================
+# SUPPLIER LOGOUT
+# ============================================================
 
 def supplier_logout(request):
+
     request.session.flush()
-    return redirect('index')
+
+    return redirect(
+        'index'
+    )
+
