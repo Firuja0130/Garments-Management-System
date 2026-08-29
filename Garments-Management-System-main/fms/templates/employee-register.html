@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Registration | Moon Star Fashion</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.2rem 5%;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .logo i {
+            margin-right: 10px;
+            font-size: 1.8rem;
+        }
+        
+        .nav-links {
+            display: flex;
+        }
+        
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            padding: 8px 12px;
+            border-radius: 4px;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .registration-container {
+            max-width: 500px;
+            margin: 3rem auto;
+            padding: 2rem;
+        }
+        
+        .form-card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .form-title {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #333;
+            position: relative;
+            padding-bottom: 15px;
+        }
+        
+        .form-title:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(to right, #6a11cb, #2575fc);
+            border-radius: 2px;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #6a11cb;
+            box-shadow: 0 0 0 3px rgba(106, 17, 203, 0.2);
+        }
+        
+        input::placeholder {
+            color: #aaa;
+        }
+        
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .success-message {
+            text-align: center;
+            color: #27ae60;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: rgba(39, 174, 96, 0.1);
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        
+        .login-link {
+            text-align: center;
+            margin-top: 25px;
+            color: #7f8c8d;
+        }
+        
+        .login-link a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                padding: 1rem;
+            }
+            
+            .logo {
+                margin-bottom: 1rem;
+            }
+            
+            .nav-links {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .nav-link {
+                margin: 5px;
+                font-size: 0.9rem;
+            }
+            
+            .registration-container {
+                padding: 1rem;
+            }
+            
+            .form-card {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    
+    <nav class="navbar">
+        <div class="logo">
+            <i class="fas fa-tshirt"></i>
+            <span>Moon Star Fashion</span>
+        </div>
+        <div class="nav-links">
+            <a href="{% url 'index' %}" class="nav-link">Home</a>
+            <a href="{% url 'about' %}" class="nav-link">About Us</a>
+            <a href="{% url 'employee_register_page' %}" class="nav-link active">Employee Register</a>
+            <a href="{% url 'supplier_register_page' %}" class="nav-link">Supplier Register</a>
+            <a href="{% url 'admin_redirect' %}" class="nav-link">Admin</a>
+            <a href="{% url 'login_page' %}" class="nav-link">Login</a>
+        </div>
+    </nav>
+
+    <div class="registration-container">
+        <div class="form-card">
+            <h1 class="form-title">Employee Registration</h1>
+            <form method="post" action="{% url 'employee_register' %}">
+                {% csrf_token %}
+                <label>Name:</label>
+                <input type="text" name="name" required><br>
+
+                <label>Email:</label>
+                <input type="email" name="email" required><br>
+
+                <label>Password:</label>
+                <input type="password" name="password" required><br>
+
+                <!-- Face Registration -->
+<div class="form-group" style="margin-top: 25px;">
+    <label style="display: block; margin-bottom: 10px; font-weight: 600;">
+        Face Registration
+    </label>
+
+    <video id="video" width="100%" height="300" autoplay
+           style="border-radius: 8px; background: #222; object-fit: cover;">
+    </video>
+
+    <canvas id="canvas" style="display: none;"></canvas>
+
+    <button type="button" id="startCamera">
+        <i class="fas fa-camera"></i> Start Camera
+    </button>
+
+    <button type="button" id="captureFace"
+            style="display: none; background: #27ae60;">
+        <i class="fas fa-user-check"></i> Capture Face
+    </button>
+
+    <p id="faceStatus"
+       style="text-align: center; margin-top: 10px; font-weight: 500;">
+        Face not registered
+    </p>
+
+    <input type="hidden" name="face_image" id="faceImage">
+</div>
+
+                <label>Contact:</label>
+                <input type="text" name="phone"><br>
+
+                <button type="submit">Register</button>
+            </form>
+
+            
+            {% if success %}
+            <p class="success-message">{{ success }}</p>
+            {% endif %}
+            
+            <div class="login-link">
+                Already have an account? <a href="/login/">Sign In</a>
+            </div>
+        </div>
+    </div>
+
+<script>
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const startCamera = document.getElementById('startCamera');
+const captureFace = document.getElementById('captureFace');
+const faceStatus = document.getElementById('faceStatus');
+const faceImage = document.getElementById('faceImage');
+
+let stream = null;
+
+startCamera.addEventListener('click', async function () {
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({
+            video: true
+        });
+
+        video.srcObject = stream;
+
+        startCamera.style.display = 'none';
+        captureFace.style.display = 'block';
+
+        faceStatus.innerText = 'Camera is running. Position your face in the camera.';
+        faceStatus.style.color = '#2575fc';
+
+    } catch (error) {
+        console.error(error);
+        faceStatus.innerText =
+            'Camera access denied or unavailable.';
+        faceStatus.style.color = '#e74c3c';
+    }
+});
+
+captureFace.addEventListener('click', function () {
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    const context = canvas.getContext('2d');
+
+    context.drawImage(
+        video,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    const imageData = canvas.toDataURL('image/jpeg');
+
+    faceImage.value = imageData;
+
+    faceStatus.innerText =
+        '✓ Face captured successfully!';
+
+    faceStatus.style.color = '#27ae60';
+
+    captureFace.innerText = '✓ Face Captured';
+
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+    }
+
+    video.style.opacity = '0.7';
+});
+</script>
+
+</body>
+</html>
